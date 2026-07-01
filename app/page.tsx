@@ -1,7 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { startIntroAudio, stopScratch, fadeOutMusic, chime } from './introAudio'
+
+// Timing of the signature ceremony (ms)
+const WRITE_MS = 5200 // slow, deliberate handwriting
+const HOLD_MS = 1500 // let the finished name glow
+const FADE_MS = 1300 // dissolve the black into the site
+
+// Feeds the writing duration to the CSS animations via a custom property.
+const writeVar = { '--write': `${WRITE_MS}ms` } as React.CSSProperties
 
 // Artwork data
 const flagshipWorks = [
@@ -55,8 +63,13 @@ const flagshipWorks = [
 const galleryWorks = flagshipWorks // In production, this would be expanded
 
 export default function Home() {
-  const [loadingComplete, setLoadingComplete] = useState(false)
-  const [logoReady, setLogoReady] = useState(false)
+  // Intro ceremony state
+  const [entered, setEntered] = useState(false) // user gesture given, writing begins
+  const [writingDone, setWritingDone] = useState(false) // signature complete, glowing
+  const [exiting, setExiting] = useState(false) // black overlay dissolving
+  const [overlayGone, setOverlayGone] = useState(false) // overlay unmounted
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -66,18 +79,62 @@ export default function Home() {
   })
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
+  // Honor reduced-motion / SSR: skip the ceremony entirely.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLogoReady(true)
-    }, 1200)
-    const endTimer = setTimeout(() => {
-      setLoadingComplete(true)
-    }, 2000)
-    return () => {
-      clearTimeout(timer)
-      clearTimeout(endTimer)
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce) {
+      setOverlayGone(true)
     }
   }, [])
+
+  // Lock scroll while the overlay is present.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.body.classList.toggle('intro-lock', !overlayGone)
+    return () => document.body.classList.remove('intro-lock')
+  }, [overlayGone])
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+
+  const beginExit = useCallback(() => {
+    setExiting(true)
+    fadeOutMusic()
+    timers.current.push(setTimeout(() => setOverlayGone(true), FADE_MS))
+  }, [])
+
+  const handleEnter = useCallback(() => {
+    if (entered) return
+    setEntered(true)
+    void startIntroAudio(WRITE_MS)
+    // Signature finishes writing
+    timers.current.push(
+      setTimeout(() => {
+        setWritingDone(true)
+        stopScratch()
+        chime()
+      }, WRITE_MS)
+    )
+    // Hold on the glowing name, then dissolve into the site
+    timers.current.push(setTimeout(beginExit, WRITE_MS + HOLD_MS))
+  }, [entered, beginExit])
+
+  const handleSkip = useCallback(() => {
+    stopScratch()
+    beginExit()
+  }, [beginExit])
+
+  // Escape skips the intro once it has begun.
+  useEffect(() => {
+    if (!entered || overlayGone) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleSkip()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [entered, overlayGone, handleSkip])
 
   const series = ['Creatures', 'Pop Icons', 'Studies']
   const filteredWorks = selectedSeries
@@ -114,22 +171,45 @@ export default function Home() {
 
   return (
     <>
-      {/* Animated Loader */}
-      {!loadingComplete && (
-        <div className="loading-overlay">
-          <div className="text-center">
-            <div className={`text-6xl font-bold tracking-wider transition-all duration-700 ${logoReady ? 'animate-scale-to-logo' : 'animate-paint-stroke'}`}>
-              Xavier Lopez
-            </div>
-            <div className="mt-4 w-24 h-1 bg-stone-300 mx-auto rounded-full overflow-hidden">
-              <div className={`h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-1500 ${logoReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+      {/* Majestic signature intro */}
+      {!overlayGone && (
+        <div className={`intro-overlay${exiting ? ' intro-exit' : ''}`}>
+          <div className={`intro-stage${writingDone ? ' is-done' : ''}`}>
+            {entered && (
+              <>
+                <div className={`intro-sign${writingDone ? ' is-done' : ''}`}>
+                  <span className="intro-sign-text" style={writeVar}>
+                    Xavier Lopez
+                  </span>
+                  {!writingDone && (
+                    <span className="intro-pen" style={writeVar} aria-hidden="true">
+                      <span className="intro-pen-nib" />
+                    </span>
+                  )}
+                </div>
+                <p className="intro-tagline">Contemporary Artist</p>
+              </>
+            )}
           </div>
+
+          {!entered && (
+            <button className="intro-gate" onClick={handleEnter} aria-label="Enter the portfolio">
+              <span className="intro-gate-ring" />
+              <span className="intro-gate-label">Xavier Lopez</span>
+              <span className="intro-gate-sub">tap to enter</span>
+            </button>
+          )}
+
+          {entered && !exiting && (
+            <button className="intro-skip" onClick={handleSkip}>
+              Skip
+            </button>
+          )}
         </div>
       )}
 
-      {loadingComplete && (
-        <>
+      {/* Portfolio */}
+      <>
           {/* Navigation */}
           <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -336,8 +416,7 @@ export default function Home() {
           <footer className="bg-stone-950 text-stone-400 px-4 sm:px-6 lg:px-8 py-8 text-center text-sm">
             <p>&copy; 2024 Xavier Lopez. All rights reserved.</p>
           </footer>
-        </>
-      )}
+      </>
     </>
   )
 }

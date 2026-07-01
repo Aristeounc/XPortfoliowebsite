@@ -2,6 +2,16 @@
 
 @source "../app/**/*.{js,ts,jsx,tsx,mdx}";
 
+/* Self-hosted signature script (Great Vibes, SIL OFL) so the swooping
+   letterforms are guaranteed regardless of network / Google Fonts. */
+@font-face {
+  font-family: 'Signature Script';
+  src: url('/fonts/great-vibes.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -20,6 +30,10 @@ h1, h2, h3, h4 {
   font-family: 'Playfair Display', Georgia, serif;
 }
 
+body.intro-lock {
+  overflow: hidden;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -31,48 +45,8 @@ h1, h2, h3, h4 {
   }
 }
 
-@keyframes paintStroke {
-  0% {
-    opacity: 0;
-    clip-path: inset(0 100% 0 0);
-  }
-  100% {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(1) translateY(-50%);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.3) translateY(0);
-    opacity: 1;
-  }
-}
-
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out;
-}
-
-.animate-paint-stroke {
-  animation: paintStroke 1.2s ease-in-out;
-}
-
-.animate-scale-to-logo {
-  animation: scaleIn 0.8s ease-in-out forwards;
-}
-
-.loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: #fafaf8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
 }
 
 .gallery-item {
@@ -85,4 +59,255 @@ h1, h2, h3, h4 {
 
 .gallery-item:hover img {
   filter: brightness(0.95);
+}
+
+/* ============================================================= */
+/*  Majestic signature intro                                     */
+/* ============================================================= */
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 1;
+}
+
+/* soft vignette gives the black depth */
+.intro-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.65) 100%);
+  pointer-events: none;
+}
+
+.intro-overlay.intro-exit {
+  opacity: 0;
+  transition: opacity 1.3s ease;
+}
+
+/* --- Entry gate (waits for the user's gesture so audio may play) --- */
+
+.intro-gate {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.82);
+  background: transparent;
+  border: none;
+  z-index: 3;
+  animation: gateFadeIn 1.4s ease both;
+}
+
+.intro-gate.intro-gate-hide {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.intro-gate-ring {
+  width: 92px;
+  height: 92px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: gatePulse 2.6s ease-in-out infinite;
+}
+
+.intro-gate-ring::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.7);
+}
+
+.intro-gate-label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  padding-left: 0.42em;
+}
+
+.intro-gate-sub {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@keyframes gateFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gatePulse {
+  0%, 100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.12); }
+  50%      { transform: scale(1.06); box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); }
+}
+
+/* --- The signature itself --- */
+
+.intro-stage {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  transition: transform 1.3s ease, opacity 1.3s ease;
+}
+
+.intro-overlay.intro-exit .intro-stage {
+  transform: translateY(-10px) scale(0.955);
+}
+
+.intro-sign {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.14em 0.12em;
+}
+
+.intro-sign-text {
+  display: inline-block;
+  font-family: 'Signature Script', 'Great Vibes', 'Snell Roundhand', 'Segoe Script', cursive;
+  color: #fff;
+  font-size: clamp(3.4rem, 13vw, 11rem);
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow:
+    0 0 22px rgba(255, 255, 255, 0.35),
+    0 0 60px rgba(255, 255, 255, 0.15);
+  /* hidden until the writing animation reveals it left-to-right */
+  clip-path: inset(-30% 100% -30% -3%);
+  animation: writeReveal var(--write, 5200ms) ease forwards;
+}
+
+.intro-sign.is-done .intro-sign-text {
+  animation: none;
+  clip-path: inset(-30% -3% -30% -3%);
+  animation: signGlow 3.4s ease-in-out infinite;
+}
+
+@keyframes writeReveal {
+  from { clip-path: inset(-30% 100% -30% -3%); }
+  to   { clip-path: inset(-30% -3% -30% -3%); }
+}
+
+@keyframes signGlow {
+  0%, 100% { text-shadow: 0 0 22px rgba(255, 255, 255, 0.32), 0 0 60px rgba(255, 255, 255, 0.14); }
+  50%      { text-shadow: 0 0 30px rgba(255, 255, 255, 0.5),  0 0 90px rgba(255, 255, 255, 0.22); }
+}
+
+/* --- The glowing nib that leads the ink --- */
+
+.intro-pen {
+  position: absolute;
+  top: 46%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: penTravel var(--write, 5200ms) ease forwards;
+}
+
+.intro-pen-nib {
+  width: 3px;
+  height: clamp(2.4rem, 9vw, 7rem);
+  border-radius: 3px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), #fff 55%, rgba(255, 255, 255, 0.9));
+  box-shadow:
+    0 0 10px 2px rgba(255, 255, 255, 0.85),
+    0 0 26px 8px rgba(255, 255, 255, 0.35);
+  transform-origin: center bottom;
+  animation: penBob 0.5s ease-in-out infinite;
+}
+
+.intro-sign.is-done .intro-pen {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+@keyframes penTravel {
+  from { left: 0%; }
+  to   { left: 100%; }
+}
+
+@keyframes penBob {
+  0%, 100% { transform: rotate(-12deg) translateY(0); }
+  25%      { transform: rotate(-9deg)  translateY(-4px); }
+  50%      { transform: rotate(-14deg) translateY(2px); }
+  75%      { transform: rotate(-8deg)  translateY(-3px); }
+}
+
+/* --- Tagline that surfaces once the name is written --- */
+
+.intro-tagline {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  font-size: clamp(0.62rem, 1.6vw, 0.85rem);
+  color: rgba(255, 255, 255, 0.62);
+  padding-left: 0.5em;
+  opacity: 0;
+}
+
+.intro-sign.is-done ~ .intro-tagline,
+.intro-stage.is-done .intro-tagline {
+  animation: taglineIn 1.6s ease forwards;
+}
+
+@keyframes taglineIn {
+  from { opacity: 0; letter-spacing: 0.9em; }
+  to   { opacity: 1; letter-spacing: 0.5em; }
+}
+
+/* --- Skip affordance --- */
+
+.intro-skip {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 4;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.intro-skip:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-sign-text,
+  .intro-pen,
+  .intro-gate-ring {
+    animation: none !important;
+  }
+  .intro-sign-text {
+    clip-path: inset(-30% -3% -30% -3%);
+  }
+  .intro-pen {
+    display: none;
+  }
 }
