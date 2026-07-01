@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@source "../app/**/*.{js,ts,jsx,tsx,mdx}";
 
 * {
   margin: 0;
@@ -84,5 +84,5 @@ h1, h2, h3, h4 {
 }
 
 .gallery-item:hover img {
-  brightness: 0.95);
+  filter: brightness(0.95);
 }
