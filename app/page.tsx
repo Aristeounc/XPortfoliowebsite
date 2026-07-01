@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React,import Image from 'next/image' { useState, useEffect, useCallback, useRef } from 'react'
 import { startIntroAudio, stopScratch, fadeOutMusic, chime } from './introAudio'
 
 // Timing of the signature ceremony (ms)
