@@ -7,8 +7,16 @@
     "start": "next start"
   },
   "dependencies": {
+    "autoprefixer": "^10.5.2",
     "next": "^14.0.0",
+    "postcss": "^8.5.16",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.1",
+    "@types/react": "19.2.17",
+    "typescript": "6.0.3"
   }
 }
